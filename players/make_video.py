@@ -119,60 +119,74 @@ def zoom_frame(base_img, t, dur, zoom_start=1.18, zoom_end=1.0):
 
 
 def add_caption(img, player, t, dur, theme):
-    """Slide-up name + country caption with fade."""
-    draw = ImageDraw.Draw(img)
+    """Big slide-up name + country plate — fills bottom third of screen."""
     accent = theme["accent"]
     c1     = theme["c1"]
 
-    slide_progress = ease_out(min(t / 0.45, 1.0))
-    fade           = min(t / 0.3, 1.0)
+    slide_progress = ease_out(min(t / 0.4, 1.0))
+    fade           = min(t / 0.25, 1.0)
 
-    plate_h = 260
-    plate_y = H - plate_h
-    slide_offset = int((1 - slide_progress) * 160)
+    plate_h      = 420                          # tall plate — bottom third
+    plate_y      = H - plate_h
+    slide_offset = int((1 - slide_progress) * 200)
 
-    # plate background
-    overlay = Image.new("RGBA", img.size, (0,0,0,0))
+    # dark plate
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
-    od.rectangle([0, plate_y + slide_offset, W, H + slide_offset],
-                 fill=(*c1, int(230 * fade)))
-    od.rectangle([0, plate_y + slide_offset, W, plate_y + slide_offset + 7],
+    od.rectangle([0, plate_y + slide_offset, W, H + 10],
+                 fill=(*[max(0, v - 10) for v in c1], int(245 * fade)))
+    # thick accent bar on top edge
+    od.rectangle([0, plate_y + slide_offset, W, plate_y + slide_offset + 12],
                  fill=(*accent, int(255 * fade)))
     img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
     draw = ImageDraw.Draw(img)
 
-    # name
-    fn_name = get_font(88)
-    name = player["name"].upper()
-    draw.text((W//2, plate_y + 85 + slide_offset),
-              name, font=fn_name, fill=(*[255,255,255], ), anchor="mm")
+    y_base = plate_y + slide_offset
 
-    # country line
-    fn_country = get_font(54)
-    country_str = f"{player['country']}"
+    # ── PLAYER NAME — very large ──────────────────────────────────────────
+    fn_name = get_font(148)
+    name    = player["name"].upper()
+    # auto-shrink if name is long
+    while True:
+        bb = draw.textbbox((0, 0), name, font=fn_name)
+        if bb[2] - bb[0] <= W - 60 or fn_name.size <= 80:
+            break
+        fn_name = get_font(fn_name.size - 10)
+
+    # drop shadow
+    draw.text((W // 2 + 4, y_base + 120 + 4), name,
+              font=fn_name, fill=(0, 0, 0), anchor="mm")
+    draw.text((W // 2,     y_base + 120),     name,
+              font=fn_name, fill=(255, 255, 255), anchor="mm")
+
+    # ── COUNTRY — large accent colour ─────────────────────────────────────
+    fn_country  = get_font(96)
+    country_str = player["country"].upper()
+    draw.text((W // 2 + 3, y_base + 260 + 3), country_str,
+              font=fn_country, fill=(0, 0, 0), anchor="mm")
+    draw.text((W // 2,     y_base + 260),     country_str,
+              font=fn_country, fill=accent, anchor="mm")
+
+    # optional note (smaller, below country)
     if player.get("note"):
-        country_str += f"  —  {player['note']}"
-    draw.text((W//2, plate_y + 175 + slide_offset),
-              country_str, font=fn_country, fill=accent, anchor="mm")
+        fn_note = get_font(58)
+        draw.text((W // 2, y_base + 360), player["note"].upper(),
+                  font=fn_note, fill=(220, 220, 220), anchor="mm")
 
     return img
 
 
 def add_top_bar(img, ts_text, country, theme):
-    draw = ImageDraw.Draw(img)
     c1     = theme["c1"]
     accent = theme["accent"]
-    # bar
-    bar = Image.new("RGBA", img.size, (0,0,0,0))
-    bd  = ImageDraw.Draw(bar)
-    bd.rectangle([0, 0, W, 130], fill=(*[max(0,v-15) for v in c1], 210))
-    bd.rectangle([0, 124, W, 130], fill=(*accent, 255))
-    img = Image.alpha_composite(img.convert("RGBA"), bar).convert("RGB")
+    bar    = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    bd     = ImageDraw.Draw(bar)
+    bd.rectangle([0, 0, W, 160], fill=(*[max(0, v - 15) for v in c1], 220))
+    bd.rectangle([0, 154, W, 162], fill=(*accent, 255))
+    img  = Image.alpha_composite(img.convert("RGBA"), bar).convert("RGB")
     draw = ImageDraw.Draw(img)
-    fn = get_font(52)
-    draw.text((W - 50, 65), country.upper(), font=fn, fill=(255,255,255), anchor="rm")
-    fn2 = get_font(38)
-    draw.text((50, 65), ts_text, font=fn2, fill=accent, anchor="lm")
+    draw.text((W - 50, 80), country.upper(), font=get_font(68), fill=(255, 255, 255), anchor="rm")
+    draw.text((50,     80), ts_text,         font=get_font(52), fill=accent,           anchor="lm")
     return img
 
 
