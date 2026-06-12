@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>World Cup 2026 Short — Live Preview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    font-family: 'Arial Black', Arial, sans-serif;
+    color: #fff;
+    padding: 24px 16px 48px;
+  }
+
+  h1 { font-size: 1rem; color: #FFD700; margin-bottom: 20px; letter-spacing: 1px; }
+
+  /* Phone frame */
+  .phone {
+    position: relative;
+    width: 320px;
+    height: 568px;
+    background: #111;
+    border-radius: 36px;
+    border: 4px solid #333;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(255,200,0,.15);
+  }
+  .phone::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 22px;
+    background: #222; border-radius: 0 0 14px 14px; z-index: 10;
+  }
+
+  /* Scenes */
+  .scene {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    opacity: 0;
+    transition: opacity .35s ease;
+    pointer-events: none;
+  }
+  .scene.active { opacity: 1; pointer-events: auto; }
+
+  .scene-bg {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center top;
+  }
+  .scene-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.85) 100%);
+  }
+
+  /* Top bar */
+  .top-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 16px 10px;
+    z-index: 5;
+  }
+  .scene-ts {
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,200,0,.6);
+    color: #FFD700;
+    font-size: 11px; font-weight: 900;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .scene-tag {
+    background: rgba(255,200,0,.15);
+    color: #FFD700; font-size: 11px;
+    padding: 3px 10px; border-radius: 20px;
+  }
+
+  /* Centre text (hook / twist / cta) */
+  .center-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 4; padding: 20px;
+  }
+  .center-text p {
+    font-size: 22px; line-height: 1.5;
+    text-align: center;
+    text-shadow: 0 2px 12px rgba(0,0,0,.9);
+  }
+  .center-text .fire { color: #FF6B00; }
+
+  /* Bottom caption */
+  .caption {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.9) 60%, transparent);
+    padding: 32px 16px 16px;
+    z-index: 5;
+  }
+  .caption .player-name {
+    font-size: 26px; font-weight: 900; letter-spacing: .5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,.8);
+    line-height: 1.2;
+  }
+  .caption .country-line {
+    font-size: 16px; color: #FFD700; margin-top: 4px;
+    font-weight: 700;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    width: 320px; margin-top: 20px;
+    background: #222; border-radius: 4px; height: 4px; overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; background: #FFD700; width: 0%;
+    transition: width .1s linear;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex; gap: 12px; margin-top: 16px; align-items: center;
+  }
+  button {
+    background: #FFD700; color: #000; border: none;
+    border-radius: 8px; padding: 8px 20px;
+    font-family: inherit; font-size: 14px; font-weight: 900;
+    cursor: pointer; transition: opacity .15s;
+  }
+  button:hover { opacity: .85; }
+  button.secondary { background: #333; color: #fff; }
+
+  .scene-counter { font-size: 13px; color: #888; min-width: 60px; text-align: center; }
+
+  /* Storyboard strip */
+  .strip-wrap { margin-top: 32px; width: 100%; max-width: 800px; }
+  .strip-title { font-size: 0.75rem; color: #555; margin-bottom: 10px; text-align: center; }
+  .strip {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding-bottom: 8px; scrollbar-color: #333 #0a0a0a;
+  }
+  .strip-item {
+    flex: 0 0 auto; width: 64px;
+    cursor: pointer; opacity: .45; transition: opacity .15s;
+  }
+  .strip-item:hover, .strip-item.active { opacity: 1; }
+  .strip-item img {
+    width: 64px; height: 114px; object-fit: cover;
+    border-radius: 6px; display: block;
+    border: 2px solid transparent;
+  }
+  .strip-item.active img { border-color: #FFD700; }
+  .strip-item span {
+    display: block; font-size: 9px; color: #888;
+    text-align: center; margin-top: 3px; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<h1>▶ WORLD CUP 2026 SHORT — LIVE PREVIEW</h1>
+
+<div class="phone" id="phone"><!-- scenes injected by JS --></div>
+
+<div class="progress-wrap"><div class="progress-bar" id="pb"></div></div>
+
+<div class="controls">
+  <button id="btn-play">▶ Play</button>
+  <button class="secondary" id="btn-prev">◀</button>
+  <button class="secondary" id="btn-next">▶</button>
+  <span class="scene-counter" id="counter">1 / 12</span>
+</div>
+
+<div class="strip-wrap">
+  <p class="strip-title">SCENE STRIP — click to jump</p>
+  <div class="strip" id="strip"></div>
+</div>
+
+<script>
+// ─── Scene data ──────────────────────────────────────────────────────────────
+const SCENES = [
+  {
+    ts: "0–3s", tag: "HOOK", dur: 3,
+    type: "text",
+    bg: "#111",
+    html: `<p>Do you know which country these<br><span class="fire">football legends</span> are playing for<br>at <b>World Cup 2026?</b><br>Let's go! 🔥</p>`,
+  },
+  { ts:"4–6s",  tag:"REVEAL #1", dur:2, type:"card", card:"messi",       player:"Lionel Messi",      country:"Argentina 🇦🇷", bg:"#74ACDF" },
+  { ts:"6–8s",  tag:"REVEAL #2", dur:2, type:"card", card:"ronaldo",     player:"Cristiano Ronaldo", country:"Portugal 🇵🇹",  bg:"#006600" },
+  { ts:"8–10s", tag:"REVEAL #3", dur:2, type:"card", card:"mbappe",      player:"Kylian Mbappé",     country:"France 🇫🇷",    bg:"#002395" },
+  { ts:"10–12s",tag:"REVEAL #4", dur:2, type:"card", card:"neymar",      player:"Neymar Jr",         country:"Brazil 🇧🇷 — back after 2 years!", bg:"#009C3B" },
+  { ts:"12–14s",tag:"REVEAL #5", dur:2, type:"card", card:"haaland",     player:"Erling Haaland",    country:"Norway 🇳🇴",    bg:"#EF2B2D" },
+  { ts:"14–16s",tag:"REVEAL #6", dur:2, type:"card", card:"bellingham",  player:"Jude Bellingham",   country:"England 🏴󠁧󠁢󠁥󠁮󠁧󠁿",  bg:"#C8C8DC" },
+  { ts:"16–18s",tag:"REVEAL #7", dur:2, type:"card", card:"vinicius",    player:"Vinicius Jr",       country:"Brazil 🇧🇷",    bg:"#009C3B" },
+  { ts:"18–19s",tag:"REVEAL #8", dur:1, type:"card", card:"yamal",       player:"Lamine Yamal",      country:"Spain 🇪🇸",     bg:"#AA151B" },
+  { ts:"19–20s",tag:"REVEAL #9", dur:1, type:"card", card:"musiala",     player:"Jamal Musiala",     country:"Germany 🇩🇪",   bg:"#141414" },
+  {
+    ts:"21–45s", tag:"TWIST", dur:5,
+    type:"text",
+    bg:"#3C0A0A",
+    html:`<p>Here's the one everyone gets wrong…<br><br>Neymar plays for <b>Al-Hilal</b>…<br>but his COUNTRY?<br><span class="fire">Always Brazil! 🇧🇷</span><br><br>This could be the <b>LAST World Cup</b><br>for Messi AND Ronaldo.<br>Don't miss it.</p>`,
+  },
+  {
+    ts:"46–60s", tag:"CTA", dur:4,
+    type:"text",
+    bg:"#0A2A0A",
+    html:`<p>Which player are YOU most excited to watch?<br><br><span class="fire">Comment below! 👇</span><br><br>Like &amp; subscribe for more<br>World Cup content! ⚽🔥</p>`,
+  },
+];
+
+const phone  = document.getElementById("phone");
+const pb     = document.getElementById("pb");
+const counter= document.getElementById("counter");
+const strip  = document.getElementById("strip");
+const TOTAL  = SCENES.reduce((s,sc) => s + sc.dur, 0);
+
+// ─── Build scene elements ────────────────────────────────────────────────────
+SCENES.forEach((sc, i) => {
+  const el = document.createElement("div");
+  el.className = "scene";
+  el.id = `scene-${i}`;
+
+  const bg = document.createElement("div");
+  bg.className = "scene-bg";
+  bg.style.background = sc.bg;
+
+  if (sc.type === "card") {
+    // try PNG first, fall back to SVG
+    const img = document.createElement("img");
+    img.style.cssText = "width:100%;height:100%;object-fit:cover;position:absolute;inset:0;";
+    img.src = `cards/${sc.card}.png`;
+    img.onerror = () => { img.src = `cards/${sc.card}.svg`; };
+    bg.appendChild(img);
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "scene-overlay";
+
+  const topBar = document.createElement("div");
+  topBar.className = "top-bar";
+  topBar.innerHTML = `<span class="scene-ts">${sc.ts}</span><span class="scene-tag">${sc.tag}</span>`;
+
+  el.appendChild(bg);
+  el.appendChild(overlay);
+  el.appendChild(topBar);
+
+  if (sc.type === "text") {
+    const ct = document.createElement("div");
+    ct.className = "center-text";
+    ct.innerHTML = sc.html;
+    el.appendChild(ct);
+  } else {
+    const cap = document.createElement("div");
+    cap.className = "caption";
+    cap.innerHTML = `<div class="player-name">${sc.player}</div>
+                     <div class="country-line">${sc.country}</div>`;
+    el.appendChild(cap);
+  }
+
+  phone.appendChild(el);
+
+  // strip thumbnail
+  const item = document.createElement("div");
+  item.className = "strip-item";
+  item.id = `thumb-${i}`;
+  item.innerHTML = `
+    <img src="cards/${sc.card||''}.png"
+         onerror="this.src='cards/${sc.card||''}.svg';this.onerror=null;"
+         style="${sc.type!=='card'?`background:${sc.bg};`:''}"/>
+    <span>${sc.tag}</span>`;
+  if (sc.type !== "card") {
+    item.querySelector("img").src = "";
+    item.querySelector("img").style.background = sc.bg;
+    item.querySelector("img").style.border = "none";
+  }
+  item.addEventListener("click", () => goTo(i));
+  strip.appendChild(item);
+});
+
+// ─── Player state ────────────────────────────────────────────────────────────
+let current = 0, elapsed = 0, playing = false, raf = null, lastTs = null;
+
+function goTo(i) {
+  document.querySelectorAll(".scene").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".strip-item").forEach(el => el.classList.remove("active"));
+  current = i;
+  document.getElementById(`scene-${i}`).classList.add("active");
+  document.getElementById(`thumb-${i}`).classList.add("active");
+  document.getElementById(`thumb-${i}`).scrollIntoView({inline:"nearest",block:"nearest"});
+  counter.textContent = `${i + 1} / ${SCENES.length}`;
+  updateProgress();
+}
+
+function totalElapsedAt(idx) {
+  return SCENES.slice(0, idx).reduce((s, sc) => s + sc.dur, 0);
+}
+
+function updateProgress() {
+  const pos = totalElapsedAt(current) + elapsed;
+  pb.style.width = (pos / TOTAL * 100).toFixed(2) + "%";
+}
+
+function tick(ts) {
+  if (!playing) return;
+  if (lastTs === null) lastTs = ts;
+  const dt = (ts - lastTs) / 1000;
+  lastTs = ts;
+  elapsed += dt;
+
+  if (elapsed >= SCENES[current].dur) {
+    elapsed -= SCENES[current].dur;
+    if (current < SCENES.length - 1) {
+      goTo(current + 1);
+    } else {
+      playing = false;
+      elapsed = 0;
+      document.getElementById("btn-play").textContent = "↺ Replay";
+      updateProgress();
+      return;
+    }
+  }
+  updateProgress();
+  raf = requestAnimationFrame(tick);
+}
+
+function play() {
+  if (current >= SCENES.length - 1 && !playing) { goTo(0); elapsed = 0; }
+  playing = true;
+  lastTs  = null;
+  document.getElementById("btn-play").textContent = "⏸ Pause";
+  raf = requestAnimationFrame(tick);
+}
+function pause() {
+  playing = false;
+  lastTs  = null;
+  cancelAnimationFrame(raf);
+  document.getElementById("btn-play").textContent = "▶ Play";
+}
+
+document.getElementById("btn-play").addEventListener("click", () => {
+  playing ? pause() : play();
+});
+document.getElementById("btn-prev").addEventListener("click", () => {
+  pause(); elapsed = 0; goTo(Math.max(0, current - 1));
+});
+document.getElementById("btn-next").addEventListener("click", () => {
+  pause(); elapsed = 0; goTo(Math.min(SCENES.length - 1, current + 1));
+});
+
+// init
+goTo(0);
+</script>
+</body>
+</html>
