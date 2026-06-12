@@ -78,25 +78,23 @@ def pil_to_np(img):
 
 def load_photo(slug, theme):
     """
-    Load the real player photo from players/images/ and scale it to fill
-    the full 1080x1920 frame (cover crop).  Falls back to a country-coloured
-    placeholder if the photo isn't present.
+    Load the real player photo and cover-crop to 1080x1920.
+    Falls back to a country-coloured placeholder if missing.
     """
     for ext in ("jpg", "jpeg", "png"):
         path = os.path.join(IMAGES, f"{slug}.{ext}")
         if os.path.exists(path):
             photo = Image.open(path).convert("RGB")
-            # cover-crop: scale so the shorter axis fills the frame
             pw, ph = photo.size
             scale  = max(W / pw, H / ph)
             nw, nh = int(pw * scale), int(ph * scale)
             photo  = photo.resize((nw, nh), Image.LANCZOS)
             x0 = (nw - W) // 2
-            y0 = max(0, (nh - H) // 4)   # bias toward top (faces are usually there)
-            y0 = min(y0, nh - H)
+            y0 = max(0, min((nh - H) // 4, nh - H))
+            print(f"    ✓ photo loaded: {path}  ({pw}x{ph} → cropped to {W}x{H})")
             return photo.crop((x0, y0, x0 + W, y0 + H))
 
-    # no photo — solid country colour with name
+    print(f"    ✗ NO photo for '{slug}' — using placeholder  (expected: {IMAGES}/{slug}.jpg)")
     c1 = theme["c1"]
     img = Image.new("RGB", (W, H), c1)
     d   = ImageDraw.Draw(img)
@@ -196,14 +194,18 @@ def player_clip(player, theme, ts_label):
 
     def make_frame(t):
         frame = zoom_frame(card, t, dur)
-        # gradient overlay — transparent in middle, dark at top & bottom
-        grad = Image.new("RGBA", (W, H), (0,0,0,0))
+        # Light gradient: only darken the top bar area and bottom caption area.
+        # The middle (player's face/body) stays fully visible.
+        grad = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         gd   = ImageDraw.Draw(grad)
         for y in range(H):
-            t_top    = max(0, 1 - y / (H * 0.35))
-            t_bottom = max(0, (y - H * 0.45) / (H * 0.55))
-            alpha    = int(200 * t_top ** 1.5 + 220 * t_bottom ** 1.8)
-            gd.line([(0,y),(W,y)], fill=(0,0,0,min(alpha,230)))
+            # top 180px: fade from 160 alpha → 0
+            t_top    = max(0.0, 1.0 - y / 180)
+            # bottom 500px: fade from 0 → 200 alpha
+            t_bottom = max(0.0, (y - (H - 500)) / 500)
+            alpha    = int(160 * t_top + 200 * t_bottom ** 1.5)
+            if alpha > 0:
+                gd.line([(0, y), (W, y)], fill=(0, 0, 0, min(alpha, 210)))
         frame = Image.alpha_composite(frame.convert("RGBA"), grad).convert("RGB")
         frame = add_top_bar(frame, ts_label, player["country"], theme)
         frame = add_caption(frame, player, t, dur, theme)
@@ -214,8 +216,8 @@ def player_clip(player, theme, ts_label):
 
 def text_scene(lines, bg_color, dur, accent=(255,200,0), line_dur=0.55):
     """Animated text reveal, one line at a time."""
-    fn_big  = get_font(72)
-    fn_small= get_font(52)
+    fn_big  = get_font(96)
+    fn_small= get_font(68)
     base_bg = Image.new("RGB", (W, H), bg_color)
 
     # subtle gradient
