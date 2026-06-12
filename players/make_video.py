@@ -51,6 +51,18 @@ PLAYERS = [
 
 def get_font(size, bold=False):
     candidates = [
+        # macOS
+        "/System/Library/Fonts/Supplemental/Impact.ttf",
+        "/Library/Fonts/Impact.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/HelveticaNeue.ttc",
+        "/Library/Fonts/Arial Bold.ttf",
+        "/Library/Fonts/Arial.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/SFNS.ttf",
+        "/System/Library/Fonts/SFCompact.ttf",
+        # Linux
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
@@ -59,9 +71,12 @@ def get_font(size, bold=False):
     for p in candidates:
         if os.path.exists(p):
             try:
-                return ImageFont.truetype(p, size)
+                f = ImageFont.truetype(p, size)
+                return f
             except Exception:
                 continue
+    # absolute fallback — warn so the user knows
+    print(f"  ⚠ No system font found — text will be tiny! Install Arial or Helvetica.")
     return ImageFont.load_default()
 
 def lerp(a, b, t):
@@ -124,52 +139,51 @@ def add_caption(img, player, t, dur, theme):
     slide_progress = ease_out(min(t / 0.4, 1.0))
     fade           = min(t / 0.25, 1.0)
 
-    plate_h      = 420                          # tall plate — bottom third
+    plate_h      = 500                          # bottom ~26% of 1920
     plate_y      = H - plate_h
-    slide_offset = int((1 - slide_progress) * 200)
+    slide_offset = int((1 - slide_progress) * 220)
 
-    # dark plate
+    # solid dark plate
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
     od.rectangle([0, plate_y + slide_offset, W, H + 10],
-                 fill=(*[max(0, v - 10) for v in c1], int(245 * fade)))
-    # thick accent bar on top edge
-    od.rectangle([0, plate_y + slide_offset, W, plate_y + slide_offset + 12],
+                 fill=(0, 0, 0, int(220 * fade)))
+    # thick coloured accent bar on top edge
+    od.rectangle([0, plate_y + slide_offset, W, plate_y + slide_offset + 16],
                  fill=(*accent, int(255 * fade)))
     img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
     draw = ImageDraw.Draw(img)
 
     y_base = plate_y + slide_offset
 
-    # ── PLAYER NAME — very large ──────────────────────────────────────────
-    fn_name = get_font(148)
+    # ── PLAYER NAME ───────────────────────────────────────────────────────
+    fn_name = get_font(160)
     name    = player["name"].upper()
-    # auto-shrink if name is long
+    # auto-shrink for long names (e.g. "CRISTIANO RONALDO")
     while True:
         bb = draw.textbbox((0, 0), name, font=fn_name)
-        if bb[2] - bb[0] <= W - 60 or fn_name.size <= 80:
+        if (bb[2] - bb[0]) <= W - 40 or fn_name.size <= 90:
             break
-        fn_name = get_font(fn_name.size - 10)
+        fn_name = get_font(fn_name.size - 8)
 
-    # drop shadow
-    draw.text((W // 2 + 4, y_base + 120 + 4), name,
+    draw.text((W // 2 + 5, y_base + 140 + 5), name,
               font=fn_name, fill=(0, 0, 0), anchor="mm")
-    draw.text((W // 2,     y_base + 120),     name,
+    draw.text((W // 2,     y_base + 140),     name,
               font=fn_name, fill=(255, 255, 255), anchor="mm")
 
-    # ── COUNTRY — large accent colour ─────────────────────────────────────
-    fn_country  = get_font(96)
+    # ── COUNTRY ───────────────────────────────────────────────────────────
+    fn_country  = get_font(110)
     country_str = player["country"].upper()
-    draw.text((W // 2 + 3, y_base + 260 + 3), country_str,
+    draw.text((W // 2 + 4, y_base + 300 + 4), country_str,
               font=fn_country, fill=(0, 0, 0), anchor="mm")
-    draw.text((W // 2,     y_base + 260),     country_str,
+    draw.text((W // 2,     y_base + 300),     country_str,
               font=fn_country, fill=accent, anchor="mm")
 
-    # optional note (smaller, below country)
+    # note line
     if player.get("note"):
-        fn_note = get_font(58)
-        draw.text((W // 2, y_base + 360), player["note"].upper(),
-                  font=fn_note, fill=(220, 220, 220), anchor="mm")
+        fn_note = get_font(64)
+        draw.text((W // 2, y_base + 430), player["note"].upper(),
+                  font=fn_note, fill=(200, 200, 200), anchor="mm")
 
     return img
 
