@@ -19,8 +19,9 @@ from moviepy import VideoClip, concatenate_videoclips
 W, H  = 1080, 1920
 FPS   = 30
 DIR   = os.path.dirname(os.path.abspath(__file__))
-CARDS = os.path.join(DIR, "cards")
-OUT   = os.path.join(DIR, "world_cup_short.mp4")
+CARDS  = os.path.join(DIR, "cards")
+IMAGES = os.path.join(DIR, "images")
+OUT    = os.path.join(DIR, "world_cup_short.mp4")
 
 THEMES = {
     "Argentina": dict(c1=(116,172,223), c2=(255,255,255), accent=(255,255,255)),
@@ -75,15 +76,31 @@ def ease_in_out(t):
 def pil_to_np(img):
     return np.array(img.convert("RGB"))
 
-def load_card(slug):
-    """Load PNG card (with real photo) if available, else SVG→PIL via placeholder."""
-    png = os.path.join(CARDS, f"{slug}.png")
-    if os.path.exists(png):
-        return Image.open(png).convert("RGB").resize((W, H), Image.LANCZOS)
-    # fallback: grey placeholder
-    img = Image.new("RGB", (W, H), (40, 40, 40))
-    d = ImageDraw.Draw(img)
-    d.text((W//2, H//2), slug.upper(), font=get_font(80), fill=(200,200,200), anchor="mm")
+def load_photo(slug, theme):
+    """
+    Load the real player photo from players/images/ and scale it to fill
+    the full 1080x1920 frame (cover crop).  Falls back to a country-coloured
+    placeholder if the photo isn't present.
+    """
+    for ext in ("jpg", "jpeg", "png"):
+        path = os.path.join(IMAGES, f"{slug}.{ext}")
+        if os.path.exists(path):
+            photo = Image.open(path).convert("RGB")
+            # cover-crop: scale so the shorter axis fills the frame
+            pw, ph = photo.size
+            scale  = max(W / pw, H / ph)
+            nw, nh = int(pw * scale), int(ph * scale)
+            photo  = photo.resize((nw, nh), Image.LANCZOS)
+            x0 = (nw - W) // 2
+            y0 = max(0, (nh - H) // 4)   # bias toward top (faces are usually there)
+            y0 = min(y0, nh - H)
+            return photo.crop((x0, y0, x0 + W, y0 + H))
+
+    # no photo — solid country colour with name
+    c1 = theme["c1"]
+    img = Image.new("RGB", (W, H), c1)
+    d   = ImageDraw.Draw(img)
+    d.text((W//2, H//2), slug.upper(), font=get_font(120), fill=(255,255,255), anchor="mm")
     return img
 
 
@@ -160,17 +177,19 @@ def add_top_bar(img, ts_text, country, theme):
 
 
 def player_clip(player, theme, ts_label):
-    card = load_card(player["slug"])
+    card = load_photo(player["slug"], theme)
     dur  = player["dur"]
 
     def make_frame(t):
         frame = zoom_frame(card, t, dur)
-        # gradient overlay
+        # gradient overlay — transparent in middle, dark at top & bottom
         grad = Image.new("RGBA", (W, H), (0,0,0,0))
         gd   = ImageDraw.Draw(grad)
         for y in range(H):
-            alpha = int(180 * (y / H) ** 2)
-            gd.line([(0,y),(W,y)], fill=(0,0,0,alpha))
+            t_top    = max(0, 1 - y / (H * 0.35))
+            t_bottom = max(0, (y - H * 0.45) / (H * 0.55))
+            alpha    = int(200 * t_top ** 1.5 + 220 * t_bottom ** 1.8)
+            gd.line([(0,y),(W,y)], fill=(0,0,0,min(alpha,230)))
         frame = Image.alpha_composite(frame.convert("RGBA"), grad).convert("RGB")
         frame = add_top_bar(frame, ts_label, player["country"], theme)
         frame = add_caption(frame, player, t, dur, theme)
