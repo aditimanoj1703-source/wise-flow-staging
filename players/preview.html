@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>World Cup 2026 — Shorts Hook Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'Arial Black', Arial, sans-serif;
+      padding: 32px 24px;
+    }
+    h1 { text-align: center; font-size: 1.4rem; margin-bottom: 8px; color: #FFD700; }
+    .subtitle { text-align: center; font-size: 0.85rem; color: #888; margin-bottom: 32px; }
+
+    /* timeline strip */
+    .timeline {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 40px;
+      scrollbar-color: #444 #111;
+    }
+    .ts-item {
+      flex: 0 0 auto;
+      background: #222;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      color: #aaa;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .2s;
+    }
+    .ts-item:hover, .ts-item.active { border-color: #FFD700; color: #fff; }
+
+    /* card grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1a1a1a;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #2a2a2a;
+      transition: transform .15s, border-color .15s;
+      cursor: pointer;
+    }
+    .card:hover { transform: scale(1.04); border-color: #FFD700; }
+    .card img {
+      width: 100%;
+      aspect-ratio: 9/16;
+      object-fit: cover;
+      display: block;
+    }
+    .card-info {
+      padding: 10px 12px 12px;
+    }
+    .card-name { font-size: 0.85rem; font-weight: 900; letter-spacing: .5px; }
+    .card-country { font-size: 0.75rem; color: #bbb; margin-top: 2px; }
+
+    /* lightbox */
+    #lb {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.92);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    #lb.open { display: flex; }
+    #lb img {
+      max-height: 90vh;
+      max-width: 90vw;
+      border-radius: 16px;
+    }
+    #lb-close {
+      position: fixed; top: 20px; right: 28px;
+      font-size: 2rem; cursor: pointer; color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<h1>⚽ World Cup 2026 — YouTube Shorts Hook</h1>
+<p class="subtitle">Click any card to preview full-screen • 9:16 portrait format</p>
+
+<div class="timeline">
+  <div class="ts-item active">[0–3s] HOOK</div>
+  <div class="ts-item">[4–20s] PLAYERS</div>
+  <div class="ts-item">[21–45s] TWIST</div>
+  <div class="ts-item">[46–60s] CTA</div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div id="lb">
+  <span id="lb-close">✕</span>
+  <img id="lb-img" src="" alt=""/>
+</div>
+
+<script>
+  const players = [
+    { name: "Lionel Messi",       country: "Argentina", flag: "🇦🇷", file: "messi" },
+    { name: "Cristiano Ronaldo",  country: "Portugal",  flag: "🇵🇹", file: "ronaldo" },
+    { name: "Kylian Mbappé",      country: "France",    flag: "🇫🇷", file: "mbappe" },
+    { name: "Neymar Jr",          country: "Brazil",    flag: "🇧🇷", file: "neymar" },
+    { name: "Erling Haaland",     country: "Norway",    flag: "🇳🇴", file: "haaland" },
+    { name: "Jude Bellingham",    country: "England",   flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", file: "bellingham" },
+    { name: "Vinicius Jr",        country: "Brazil",    flag: "🇧🇷", file: "vinicius" },
+    { name: "Lamine Yamal",       country: "Spain",     flag: "🇪🇸", file: "yamal" },
+    { name: "Jamal Musiala",      country: "Germany",   flag: "🇩🇪", file: "musiala" },
+  ];
+
+  const grid = document.getElementById("grid");
+  const lb    = document.getElementById("lb");
+  const lbImg = document.getElementById("lb-img");
+
+  players.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const svgSrc = `cards/${p.file}.svg`;
+    const imgSrc = `images/${p.file}.jpg`;
+
+    // prefer real photo, fall back to SVG card
+    card.innerHTML = `
+      <img src="${imgSrc}" onerror="this.src='${svgSrc}'" alt="${p.name}"/>
+      <div class="card-info">
+        <div class="card-name">${p.flag} ${p.name}</div>
+        <div class="card-country">${p.country}</div>
+      </div>`;
+
+    card.addEventListener("click", () => {
+      const src = card.querySelector("img").src;
+      lbImg.src = src;
+      lb.classList.add("open");
+    });
+    grid.appendChild(card);
+  });
+
+  document.getElementById("lb-close").addEventListener("click", () => lb.classList.remove("open"));
+  lb.addEventListener("click", e => { if (e.target === lb) lb.classList.remove("open"); });
+
+  document.querySelectorAll(".ts-item").forEach(el => {
+    el.addEventListener("click", () => {
+      document.querySelectorAll(".ts-item").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+    });
+  });
+</script>
+</body>
+</html>

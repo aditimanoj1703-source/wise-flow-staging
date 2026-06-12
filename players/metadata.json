@@ -1,0 +1,75 @@
+[
+  {
+    "name": "Lionel Messi",
+    "country": "Argentina",
+    "flag": "🇦🇷",
+    "image_file": "messi.jpg",
+    "wikimedia_file": "Lionel_Messi_WC2022.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Cristiano Ronaldo",
+    "country": "Portugal",
+    "flag": "🇵🇹",
+    "image_file": "ronaldo.jpg",
+    "wikimedia_file": "Cristiano_Ronaldo_WC2022_-_01.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Kylian Mbappé",
+    "country": "France",
+    "flag": "🇫🇷",
+    "image_file": "mbappe.jpg",
+    "wikimedia_file": "Kylian_Mbapp%C3%A9_France.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Neymar Jr",
+    "country": "Brazil",
+    "flag": "🇧🇷",
+    "image_file": "neymar.jpg",
+    "wikimedia_file": "Neymar_Jr._with_Al_Hilal%2C_3_October_2023_-_07_%28cropped%29.jpg",
+    "segment": "4-20s",
+    "note": "back after 2 years out"
+  },
+  {
+    "name": "Erling Haaland",
+    "country": "Norway",
+    "flag": "🇳🇴",
+    "image_file": "haaland.jpg",
+    "wikimedia_file": "Erling_Haaland_2023.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Jude Bellingham",
+    "country": "England",
+    "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    "image_file": "bellingham.jpg",
+    "wikimedia_file": "Jude_Bellingham_2022-11-21_1.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Vinicius Jr",
+    "country": "Brazil",
+    "flag": "🇧🇷",
+    "image_file": "vinicius.jpg",
+    "wikimedia_file": "Vinicius_Jr_2021.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Lamine Yamal",
+    "country": "Spain",
+    "flag": "🇪🇸",
+    "image_file": "yamal.jpg",
+    "wikimedia_file": "Lamine_Yamal_in_2025.jpg",
+    "segment": "4-20s"
+  },
+  {
+    "name": "Jamal Musiala",
+    "country": "Germany",
+    "flag": "🇩🇪",
+    "image_file": "musiala.jpg",
+    "wikimedia_file": "Jamal_Musiala_2022.jpg",
+    "segment": "4-20s"
+  }
+]
